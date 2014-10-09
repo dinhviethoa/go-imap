@@ -464,6 +464,18 @@ func (c *Client) IdleTerm() (cmd *Command, err error) {
 	return
 }
 
+func (c *Client) IdleEnd() (cmd *Command, err error) {
+	if len(c.tags) == 1 {
+		if cmd = c.cmds[c.tags[0]]; cmd.name == "IDLE" {
+			err = c.t.WriteLine([]byte("DONE"))
+			if err == nil {
+				err = c.t.Flush()
+			}
+		}
+	}
+	return
+}
+
 // ID provides client identification information to the server. See RFC 2971 for
 // additional information.
 func (c *Client) ID(info ...string) (cmd *Command, err error) {
