@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"time"
+	"os"
 )
 
 // Timeout values for the Dial functions.
@@ -21,6 +22,18 @@ const (
 func Dial(addr string) (c *Client, err error) {
 	addr = defaultPort(addr, "143")
 	conn, err := net.DialTimeout("tcp", addr, netTimeout)
+
+	// set keepalive if we can
+	t, ok := conn.(*net.TCPConn)
+	if ok {
+		err := t.SetKeepAlive(true)
+		if err != nil {
+			t.SetKeepAlivePeriod(30*time.Second)
+			print("no keepalive!: ", err)
+			os.Exit(1)
+		}
+	}
+
 	if err == nil {
 		host, _, _ := net.SplitHostPort(addr)
 		if c, err = NewClient(conn, host, clientTimeout); err != nil {
@@ -35,6 +48,15 @@ func Dial(addr string) (c *Client, err error) {
 func DialTLS(addr string, config *tls.Config) (c *Client, err error) {
 	addr = defaultPort(addr, "993")
 	conn, err := net.DialTimeout("tcp", addr, netTimeout)
+	t, ok := conn.(*net.TCPConn)
+	if ok {
+		err := t.SetKeepAlive(true)
+		if err != nil {
+			t.SetKeepAlivePeriod(30*time.Second)
+			print("no keepalive!: ", err)
+			os.Exit(1)
+		}
+	}
 	if err == nil {
 		host, _, _ := net.SplitHostPort(addr)
 		tlsConn := tls.Client(conn, setServerName(config, host))
