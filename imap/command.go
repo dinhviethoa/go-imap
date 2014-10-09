@@ -295,73 +295,76 @@ type CommandConfig struct {
 	Exclusive bool           // Exclusive Client access flag
 }
 
+const (
+	all   = Login | Auth | Selected | Logout
+	login = Login
+	auth  = Auth | Selected
+	sel   = Selected
+)
+
+var defaultCommandSet = map[string]*CommandConfig{
+	// RFC 3501 (6.1. Client Commands - Any State)
+	"CAPABILITY": &CommandConfig{States: all, Filter: NameFilter},
+	"NOOP":       &CommandConfig{States: all},
+	"LOGOUT":     &CommandConfig{States: all, Filter: ByeFilter},
+
+	// RFC 3501 (6.2. Client Commands - Not Authenticated State)
+	"STARTTLS":     &CommandConfig{States: login, Exclusive: true},
+	"AUTHENTICATE": &CommandConfig{States: login, Exclusive: true},
+	"LOGIN":        &CommandConfig{States: login, Exclusive: true},
+
+	// RFC 3501 (6.3. Client Commands - Authenticated State)
+	"SELECT":      &CommandConfig{States: auth, Filter: SelectFilter, Exclusive: true},
+	"EXAMINE":     &CommandConfig{States: auth, Filter: SelectFilter, Exclusive: true},
+	"CREATE":      &CommandConfig{States: auth},
+	"DELETE":      &CommandConfig{States: auth},
+	"RENAME":      &CommandConfig{States: auth},
+	"SUBSCRIBE":   &CommandConfig{States: auth},
+	"UNSUBSCRIBE": &CommandConfig{States: auth},
+	"LIST":        &CommandConfig{States: auth, Filter: NameFilter},
+	"LSUB":        &CommandConfig{States: auth, Filter: NameFilter},
+	"STATUS":      &CommandConfig{States: auth, Filter: NameFilter},
+	"APPEND":      &CommandConfig{States: auth},
+
+	// RFC 3501 (6.4. Client Commands - Selected State)
+	"CHECK":      &CommandConfig{States: sel},
+	"CLOSE":      &CommandConfig{States: sel, Exclusive: true},
+	"EXPUNGE":    &CommandConfig{States: sel, Filter: NameFilter},
+	"SEARCH":     &CommandConfig{States: sel, Filter: NameFilter},
+	"FETCH":      &CommandConfig{States: sel, Filter: FetchFilter},
+	"STORE":      &CommandConfig{States: sel, Filter: FetchFilter},
+	"COPY":       &CommandConfig{States: sel},
+	"UID SEARCH": &CommandConfig{States: sel, Filter: NameFilter},
+	"UID FETCH":  &CommandConfig{States: sel, Filter: FetchFilter},
+	"UID STORE":  &CommandConfig{States: sel, Filter: FetchFilter},
+	"UID COPY":   &CommandConfig{States: sel},
+
+	// RFC 2087
+	"SETQUOTA":     &CommandConfig{States: auth, Filter: LabelFilter("QUOTA")},
+	"GETQUOTA":     &CommandConfig{States: auth, Filter: LabelFilter("QUOTA")},
+	"GETQUOTAROOT": &CommandConfig{States: auth, Filter: LabelFilter("QUOTA", "QUOTAROOT")},
+
+	// RFC 2177
+	"IDLE": &CommandConfig{States: auth, Exclusive: true},
+
+	// RFC 2971
+	"ID": &CommandConfig{States: all, Filter: NameFilter},
+
+	// RFC 3691
+	"UNSELECT": &CommandConfig{States: sel, Exclusive: true},
+
+	// RFC 4315
+	"UID EXPUNGE": &CommandConfig{States: sel, Filter: NameFilter},
+
+	// RFC 4978
+	"COMPRESS": &CommandConfig{States: auth, Exclusive: true},
+
+	// RFC 5161
+	"ENABLE": &CommandConfig{States: all, Filter: LabelFilter("ENABLED")},
+}
+
 // defaultCommands returns the default command configuration map used to
 // initialize Client.CommandConfig.
 func defaultCommands() map[string]*CommandConfig {
-	const (
-		all   = Login | Auth | Selected | Logout
-		login = Login
-		auth  = Auth | Selected
-		sel   = Selected
-	)
-	return map[string]*CommandConfig{
-		// RFC 3501 (6.1. Client Commands - Any State)
-		"CAPABILITY": &CommandConfig{States: all, Filter: NameFilter},
-		"NOOP":       &CommandConfig{States: all},
-		"LOGOUT":     &CommandConfig{States: all, Filter: ByeFilter},
-
-		// RFC 3501 (6.2. Client Commands - Not Authenticated State)
-		"STARTTLS":     &CommandConfig{States: login, Exclusive: true},
-		"AUTHENTICATE": &CommandConfig{States: login, Exclusive: true},
-		"LOGIN":        &CommandConfig{States: login, Exclusive: true},
-
-		// RFC 3501 (6.3. Client Commands - Authenticated State)
-		"SELECT":      &CommandConfig{States: auth, Filter: SelectFilter, Exclusive: true},
-		"EXAMINE":     &CommandConfig{States: auth, Filter: SelectFilter, Exclusive: true},
-		"CREATE":      &CommandConfig{States: auth},
-		"DELETE":      &CommandConfig{States: auth},
-		"RENAME":      &CommandConfig{States: auth},
-		"SUBSCRIBE":   &CommandConfig{States: auth},
-		"UNSUBSCRIBE": &CommandConfig{States: auth},
-		"LIST":        &CommandConfig{States: auth, Filter: NameFilter},
-		"LSUB":        &CommandConfig{States: auth, Filter: NameFilter},
-		"STATUS":      &CommandConfig{States: auth, Filter: NameFilter},
-		"APPEND":      &CommandConfig{States: auth},
-
-		// RFC 3501 (6.4. Client Commands - Selected State)
-		"CHECK":      &CommandConfig{States: sel},
-		"CLOSE":      &CommandConfig{States: sel, Exclusive: true},
-		"EXPUNGE":    &CommandConfig{States: sel, Filter: NameFilter},
-		"SEARCH":     &CommandConfig{States: sel, Filter: NameFilter},
-		"FETCH":      &CommandConfig{States: sel, Filter: FetchFilter},
-		"STORE":      &CommandConfig{States: sel, Filter: FetchFilter},
-		"COPY":       &CommandConfig{States: sel},
-		"UID SEARCH": &CommandConfig{States: sel, Filter: NameFilter},
-		"UID FETCH":  &CommandConfig{States: sel, Filter: FetchFilter},
-		"UID STORE":  &CommandConfig{States: sel, Filter: FetchFilter},
-		"UID COPY":   &CommandConfig{States: sel},
-
-		// RFC 2087
-		"SETQUOTA":     &CommandConfig{States: auth, Filter: LabelFilter("QUOTA")},
-		"GETQUOTA":     &CommandConfig{States: auth, Filter: LabelFilter("QUOTA")},
-		"GETQUOTAROOT": &CommandConfig{States: auth, Filter: LabelFilter("QUOTA", "QUOTAROOT")},
-
-		// RFC 2177
-		"IDLE": &CommandConfig{States: auth, Exclusive: true},
-
-		// RFC 2971
-		"ID": &CommandConfig{States: all, Filter: NameFilter},
-
-		// RFC 3691
-		"UNSELECT": &CommandConfig{States: sel, Exclusive: true},
-
-		// RFC 4315
-		"UID EXPUNGE": &CommandConfig{States: sel, Filter: NameFilter},
-
-		// RFC 4978
-		"COMPRESS": &CommandConfig{States: auth, Exclusive: true},
-
-		// RFC 5161
-		"ENABLE": &CommandConfig{States: all, Filter: LabelFilter("ENABLED")},
-	}
+	return defaultCommandSet
 }
