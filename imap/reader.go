@@ -520,7 +520,7 @@ func normalize(atom []byte) string {
 	for i, c := range atom {
 		have := c & 0x20
 		if c &= 0xDF; 'A' <= c && c <= 'Z' && have != want {
-			norm = make([]byte, len(atom))
+			norm = atom
 			break
 		} else if i == 1 && atom[0] == '\\' {
 			want = 0x20 // Want lower case starting at i == 2
