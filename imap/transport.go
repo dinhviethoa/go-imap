@@ -22,7 +22,7 @@ const (
 
 // Limit for the maximum number of characters to print in messages containing
 // raw command/response lines.
-const rawLimit = 1024
+const rawLimit = 2048
 
 // ProtocolError indicates a low-level problem with the data being sent by the
 // client or server.
@@ -51,7 +51,7 @@ var (
 // BufferSize sets the size of the send and receive buffers (in bytes). This is
 // also the length limit of physical lines. In practice, the client should
 // restrict line length to approximately 1000 bytes, as described in RFC 2683.
-var BufferSize = 1024
+var BufferSize = 2048
 
 // Line termination.
 var crlf = []byte{cr, lf}
